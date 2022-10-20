@@ -29,21 +29,21 @@ API_URL = f'https://api.github.com/repos/{REPOSITORY}/releases'
 @functools.cache
 def _get_variant_and_executable_path():
     """@returns (variant, executable_path)"""
-    if hasattr(sys, 'frozen'):
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         path = sys.executable
-        if not hasattr(sys, '_MEIPASS'):
-            return 'py2exe', path
         if sys._MEIPASS == os.path.dirname(path):
             return f'{sys.platform}_dir', path
         if sys.platform == 'darwin' and version_tuple(platform.mac_ver()[0]) < (10, 15):
             return 'darwin_legacy_exe', path
         return f'{sys.platform}_exe', path
+    else:
+        return 'py2exe', path
 
     path = os.path.dirname(__file__)
     if isinstance(__loader__, zipimporter):
         return 'zip', os.path.join(path, '..')
-    elif (os.path.basename(sys.argv[0]) in ('__main__.py', '-m')
-          and os.path.exists(os.path.join(path, '../.git/HEAD'))):
+    if (os.path.basename(sys.argv[0]) in ('__main__.py', '-m')
+            and os.path.exists(os.path.join(path, '../.git/HEAD'))):
         return 'source', path
     return 'unknown', path
 
